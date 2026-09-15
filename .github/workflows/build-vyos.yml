@@ -18,11 +18,11 @@ jobs:
       - name: Build VyOS Docker Builder
         run: docker build -t vyos-builder docker
         
-      # 3. 核心编译过程 (删除已废弃的 configure，直接运行 make iso)
+      # 3. 核心编译过程 (使用最新的 generic 风味和底层脚本)
       - name: Compile VyOS ISO
         run: |
           docker run --rm --privileged -v ${{ github.workspace }}:/vyos -w /vyos vyos-builder \
-          bash -c "sudo make iso"
+          bash -c "sudo ./build-vyos-image generic --architecture amd64 --build-by 'GitHub-Actions'"
           
       # 4. 提取生成的 ISO 文件供我们下载
       - name: Upload ISO Artifact
