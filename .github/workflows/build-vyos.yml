@@ -1,0 +1,33 @@
+name: Build VyOS 1.4 LTS
+
+on:
+  workflow_dispatch: # 这个指令允许我们在网页上手动点击按钮触发编译
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      # 1. 拉取官方源码 (sagitta 是 1.4 LTS 分支)
+      - name: Checkout VyOS Build Repository
+        uses: actions/checkout@v4
+        with:
+          repository: vyos/vyos-build
+          ref: sagitta 
+          
+      # 2. 构建编译环境容器
+      - name: Build VyOS Docker Builder
+        run: docker build -t vyos-builder docker
+        
+      # 3. 核心编译过程 (生成 ISO)
+      - name: Compile VyOS ISO
+        run: |
+          docker run --rm --privileged -v ${{ github.workspace }}:/vyos -w /vyos vyos-builder \
+          bash -c "./configure --architecture amd64 --build-by 'GitHub-Actions' && sudo make iso"
+          
+      # 4. 提取生成的 ISO 文件供我们下载
+      - name: Upload ISO Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: VyOS-1.4-LTS-amd64
+          path: build/*.iso
+          retention-days: 3 # 镜像保留 3 天
