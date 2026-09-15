@@ -1,18 +1,18 @@
-name: Build VyOS 1.4 LTS
+name: Build VyOS Rolling Release
 
 on:
-  workflow_dispatch: # 这个指令允许我们在网页上手动点击按钮触发编译
+  workflow_dispatch: 
 
 jobs:
   build:
     runs-on: ubuntu-22.04
     steps:
-      # 1. 拉取官方源码 (sagitta 是 1.4 LTS 分支)
+      # 1. 拉取官方源码 (改用目前唯一完全开放的 rolling 分支)
       - name: Checkout VyOS Build Repository
         uses: actions/checkout@v4
         with:
           repository: vyos/vyos-build
-          ref: sagitta 
+          ref: rolling
           
       # 2. 构建编译环境容器
       - name: Build VyOS Docker Builder
@@ -28,6 +28,6 @@ jobs:
       - name: Upload ISO Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: VyOS-1.4-LTS-amd64
+          name: VyOS-Rolling-amd64
           path: build/*.iso
-          retention-days: 3 # 镜像保留 3 天
+          retention-days: 3
