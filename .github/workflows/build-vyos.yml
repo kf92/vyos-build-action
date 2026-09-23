@@ -1,4 +1,4 @@
-name: Build VyOS Stream
+name: Build VyOS Stream from Tarball
 
 on:
   workflow_dispatch: 
@@ -7,27 +7,33 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     steps:
-      # 1. 拉取官方源码 (sagitta 分支对应 1.4 Stream)
-      - name: Checkout VyOS Build Repository
-        uses: actions/checkout@v4
-        with:
-          repository: vyos/vyos-build
-          ref: sagitta
+      # 1. 下载并解压官方 VyOS Stream 源码包
+      - name: Download and Extract VyOS Stream Source
+        run: |
+          echo "Downloading VyOS Stream source tarball..."
+          curl -L -o stream-source.tar.gz "https://community-downloads.vyos.dev/stream/2026.03/circinus-2026.03.tar.gz"
           
-      # 2. 构建编译环境容器
+          echo "Extracting tarball..."
+          mkdir -p vyos-src
+          # --strip-components=1 用于剥离压缩包内的根目录，使文件直接展开到 vyos-src 文件夹中
+          tar -xzf stream-source.tar.gz -C vyos-src --strip-components=1
+          
+      # 2. 在解压后的目录中构建编译环境容器
       - name: Build VyOS Docker Builder
-        run: docker build -t vyos-builder docker
+        run: |
+          cd vyos-src
+          docker build -t vyos-builder docker
         
       # 3. 核心编译过程
       - name: Compile VyOS ISO
         run: |
-          docker run --rm --privileged -v ${{ github.workspace }}:/vyos -w /vyos vyos-builder \
+          docker run --rm --privileged -v ${{ github.workspace }}/vyos-src:/vyos -w /vyos vyos-builder \
           bash -c "sudo ./build-vyos-image generic --architecture amd64 --build-by 'GitHub-Actions-Stream'"
           
-      # 4. 提取生成的 ISO 文件供我们下载
+      # 4. 提取生成的 ISO 文件供下载
       - name: Upload ISO Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: VyOS-Stream-amd64
-          path: build/*.iso
+          name: VyOS-Stream-2026.03-amd64
+          path: vyos-src/build/*.iso
           retention-days: 3
